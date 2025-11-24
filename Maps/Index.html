@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Low Emission Route & Emissions Map</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <h1>Urban Emissions Map</h1>
+      <p class="subtitle">
+        Visualize emissions, ULEZ zones, and low-emission transport options.
+      </p>
+
+      <section class="panel">
+        <h2>Map Layers</h2>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-heatmap" checked />
+          <span>Show Emissions Heatmap</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-ulez" checked />
+          <span>Show ULEZ Zone</span>
+        </label>
+      </section>
+
+      <section class="panel">
+        <h2>Travel Mode</h2>
+        <div class="btn-group" id="mode-buttons">
+          <button class="btn btn-primary" data-mode="normal">Normal</button>
+          <button class="btn" data-mode="low-emission">Low Emission</button>
+        </div>
+        <p class="hint">
+          Click different modes to see how your emissions estimate changes.
+        </p>
+      </section>
+
+      <section class="panel">
+        <h2>Trip Emissions (Mock)</h2>
+        <form id="trip-form">
+          <label>
+            Distance (km)
+            <input type="number" id="distance-input" min="0" step="0.1" value="5" />
+          </label>
+
+          <label>
+            Transport Type
+            <select id="transport-select">
+              <option value="car">Car (petrol)</option>
+              <option value="diesel">Car (diesel)</option>
+              <option value="bus">Bus</option>
+              <option value="train">Train</option>
+              <option value="bike">Bike</option>
+              <option value="walk">Walk</option>
+            </select>
+          </label>
+
+          <button type="submit" class="btn btn-primary full-width">
+            Calculate Emissions
+          </button>
+        </form>
+
+        <div id="trip-result" class="result-box">
+          Enter details to see estimated CO₂ for your trip.
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Area Info</h2>
+        <div id="area-info" class="result-box">
+          Click on the map to inspect local emissions risk and suggestions.
+        </div>
+      </section>
+    </aside>
+
+    <!-- Map -->
+    <main class="map-container">
+      <div id="map"></div>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+  <!-- Google Maps JS API – replace YOUR_API_KEY with your real key -->
+  <script
+    async
+    defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCJstLDKus2Mtce1WzLJ6EobJMFdoXHc-o&callback=initMap">
+  </script>
+</body>
+</html>

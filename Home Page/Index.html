@@ -1,0 +1,384 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+  <title>EcoMove – Track & Reduce Your CO₂</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <script defer src="script.js"></script>
+</head>
+<body>
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="navbar__inner">
+      <a href="#hero" class="navbar__logo">
+        <span class="navbar__logo-icon">🌱</span>
+        <span class="navbar__logo-text">EcoMove</span>
+      </a>
+
+      <nav class="navbar__links" aria-label="Primary navigation">
+        <a href="#about" class="navbar__link">About Us</a>
+        <a href="#community" class="navbar__link">Community</a>
+        <a href="#challenges" class="navbar__link">Challenges</a>
+        <a href="#dashboard" class="navbar__link">Dashboard</a>
+      </nav>
+
+      <div class="navbar__auth">
+        <button class="btn btn--ghost" data-open-auth="login">Login</button>
+        <button class="btn btn--primary" data-open-auth="signup">Sign up</button>
+      </div>
+
+      <button
+        class="navbar__toggle"
+        aria-label="Toggle navigation"
+        aria-expanded="false"
+      >
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+
+    <!-- Mobile menu -->
+    <div class="navbar__mobile" aria-hidden="true">
+      <a href="#about" class="navbar__mobile-link">About Us</a>
+      <a href="#community" class="navbar__mobile-link">Community</a>
+      <a href="#challenges" class="navbar__mobile-link">Challenges</a>
+      <a href="#dashboard" class="navbar__mobile-link">Dashboard</a>
+      <button class="btn btn--ghost" data-open-auth="login">Login</button>
+      <button class="btn btn--primary" data-open-auth="signup">Sign up</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO / HOME -->
+    <section id="hero" class="hero">
+      <div class="hero__content">
+        <div class="hero__text">
+          <h1 class="hero__title">
+            Track your journeys.<br />
+            <span class="hero__title-highlight">Shrink your footprint.</span>
+          </h1>
+          <p class="hero__subtitle">
+            EcoMove helps you log trips, see real-time CO₂ emissions, and join
+            a community committed to cleaner transport choices.
+          </p>
+
+          <div class="hero__cta">
+            <button class="btn btn--primary" data-open-auth="signup">
+              Get Started
+            </button>
+            <a href="#dashboard" class="btn btn--ghost">View Dashboard</a>
+          </div>
+
+          <div class="hero__meta">
+            <div class="hero__badge">
+              <span class="hero__badge-label">Live beta</span>
+              <span class="hero__badge-value">Students · City commuters</span>
+            </div>
+            <div class="hero__meta-row">
+              <div class="hero__meta-item">
+                <span class="hero__meta-label">Trips logged</span>
+                <span class="hero__meta-value" id="meta-trips">12,450</span>
+              </div>
+              <div class="hero__meta-item">
+                <span class="hero__meta-label">CO₂ saved</span>
+                <span class="hero__meta-value" id="meta-co2">31.2 t</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero__widgets">
+          <!-- SPEEDOMETER -->
+          <section class="widget widget--speedometer" aria-label="CO₂ savings overview">
+            <header class="widget__header">
+              <h2 class="widget__title">Today’s CO₂ savings</h2>
+              <span class="widget__tag">Live</span>
+            </header>
+
+            <div class="speedometer">
+              <div class="speedometer__gauge">
+                <div class="speedometer__dial">
+                  <div class="speedometer__mask">
+                    <div class="speedometer__fill"></div>
+                  </div>
+                  <div class="speedometer__center"></div>
+                  <div class="speedometer__needle"></div>
+                  <div class="speedometer__label">
+                    <span id="speedometer-value">72%</span>
+                    <small>of daily goal</small>
+                  </div>
+                </div>
+              </div>
+
+              <div class="speedometer__stats">
+                <div class="speedometer__stat">
+                  <span class="speedometer__stat-label">You</span>
+                  <span class="speedometer__stat-value" id="speedometer-user">
+                    3.4 kg CO₂ saved
+                  </span>
+                </div>
+                <div class="speedometer__stat">
+                  <span class="speedometer__stat-label">Community</span>
+                  <span class="speedometer__stat-value" id="speedometer-community">
+                    142.8 kg CO₂ saved
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- CO₂ CALCULATOR -->
+          <section class="widget widget--calculator" aria-label="Trip CO₂ calculator">
+            <header class="widget__header">
+              <h2 class="widget__title">Quick CO₂ calculator</h2>
+            </header>
+
+            <form id="co2-form" class="calculator">
+              <div class="calculator__field">
+                <label for="distance">Distance</label>
+                <div class="calculator__input-group">
+                  <input
+                    type="number"
+                    id="distance"
+                    name="distance"
+                    min="0"
+                    step="0.1"
+                    placeholder="e.g. 5.5"
+                    required
+                  />
+                  <span class="calculator__suffix">km</span>
+                </div>
+              </div>
+
+              <div class="calculator__field">
+                <label for="mode">Transport mode</label>
+                <select id="mode" name="mode" required>
+                  <option value="car">Car</option>
+                  <option value="bus">Bus</option>
+                  <option value="train">Train</option>
+                  <option value="cycling">Cycling</option>
+                  <option value="walking">Walking</option>
+                </select>
+              </div>
+
+              <button type="submit" class="btn btn--primary btn--full">
+                Calculate impact
+              </button>
+
+              <div class="calculator__result" id="co2-result">
+                <p class="calculator__placeholder">
+                  Enter a trip to estimate your emissions.
+                </p>
+              </div>
+            </form>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAP / DASHBOARD PREVIEW -->
+    <section id="dashboard" class="section section--map">
+      <div class="section__header">
+        <h2>Live EcoMap</h2>
+        <p>
+          Visualise where trips are happening and how your community moves
+          around the city.
+        </p>
+      </div>
+
+      <div class="map-layout">
+        <div class="map-layout__map">
+          <!-- Simple Google Maps embed placeholder -->
+          <iframe
+            title="EcoMove map"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d19801.27701515033!2d-0.4800498!3d51.5321412!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48766ce9376cbdb7%3A0xaa891e0f7cec3b9!2sBrunel%20University%20London!5e0!3m2!1sen!2suk!4v1700000000000"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+          ></iframe>
+        </div>
+
+        <aside class="map-layout__sidebar">
+          <div class="stat-card">
+            <span class="stat-card__label">Active users</span>
+            <span class="stat-card__value" id="stat-active-users">238</span>
+            <span class="stat-card__hint">on EcoMove right now</span>
+          </div>
+
+          <div class="stat-card">
+            <span class="stat-card__label">Low-carbon trips today</span>
+            <span class="stat-card__value" id="stat-low-carbon-trips">
+              642
+            </span>
+            <span class="stat-card__hint">Walking · Cycling · Public transport</span>
+          </div>
+
+          <div class="stat-card stat-card--accent">
+            <span class="stat-card__label">Leaderboard snapshot</span>
+            <div class="stat-card__list">
+              <div class="stat-card__row">
+                <span>Campus Heroes</span>
+                <span>12.4 kg</span>
+              </div>
+              <div class="stat-card__row">
+                <span>Green Riders</span>
+                <span>9.7 kg</span>
+              </div>
+              <div class="stat-card__row">
+                <span>Off-Peak Walkers</span>
+                <span>7.3 kg</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ABOUT / COMMUNITY / CHALLENGES -->
+    <section id="about" class="section section--grid">
+      <div class="section__header">
+        <h2>Why EcoMove?</h2>
+        <p>
+          Small choices add up. EcoMove shows you the real impact of every trip
+          you take.
+        </p>
+      </div>
+
+      <div class="grid">
+        <article class="info-card">
+          <h3>About Us</h3>
+          <p>
+            EcoMove is a student-led project that turns everyday transport data
+            into climate insights. Log trips, track your emissions, and
+            experiment with cleaner routes.
+          </p>
+        </article>
+
+        <article id="community" class="info-card">
+          <h3>Community</h3>
+          <p>
+            Join your classmates, friends, and local residents on shared
+            challenges. Compare stats, unlock streaks, and celebrate collective
+            CO₂ savings.
+          </p>
+        </article>
+
+        <article id="challenges" class="info-card">
+          <h3>Challenges</h3>
+          <p>
+            Weekly goals push you to try greener options: bike-to-campus days,
+            car-free weekends, or public transport streaks. Climb the leaderboard
+            while cutting emissions.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <!-- AUTH SECTION (LOGIN / SIGNUP UI) -->
+    <section id="auth" class="section section--auth">
+      <div class="section__header">
+        <h2>Ready to move smarter?</h2>
+        <p>
+          Create a free account to start logging trips and tracking your CO₂
+          impact.
+        </p>
+      </div>
+
+      <div class="auth-layout">
+        <!-- LOGIN -->
+        <form class="auth-card" id="login-form" novalidate>
+          <h3>Login</h3>
+          <div class="auth-card__field">
+            <label for="login-email">Email</label>
+            <input
+              type="email"
+              id="login-email"
+              name="email"
+              placeholder="you@example.com"
+              required
+            />
+          </div>
+          <div class="auth-card__field">
+            <label for="login-password">Password</label>
+            <input
+              type="password"
+              id="login-password"
+              name="password"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          <button type="submit" class="btn btn--primary btn--full">
+            Login
+          </button>
+          <p class="auth-card__hint">
+            Just testing? These forms are front-end only for now.
+          </p>
+        </form>
+
+        <!-- SIGNUP -->
+        <form class="auth-card auth-card--highlight" id="signup-form" novalidate>
+          <h3>Sign up</h3>
+          <div class="auth-card__field">
+            <label for="signup-name">Full name</label>
+            <input
+              type="text"
+              id="signup-name"
+              name="name"
+              placeholder="Your name"
+              required
+            />
+          </div>
+          <div class="auth-card__field">
+            <label for="signup-email">Email</label>
+            <input
+              type="email"
+              id="signup-email"
+              name="email"
+              placeholder="you@example.com"
+              required
+            />
+          </div>
+          <div class="auth-card__field">
+            <label for="signup-password">Password</label>
+            <input
+              type="password"
+              id="signup-password"
+              name="password"
+              placeholder="Create a password"
+              required
+            />
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--full">
+            Create account
+          </button>
+          <p class="auth-card__hint">
+            In the full app, we’ll store your trips and sync stats across
+            devices.
+          </p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer__inner">
+      <span>© <span id="footer-year"></span> EcoMove · University project</span>
+      <span class="footer__note">Prototype · No real user data stored yet</span>
+    </div>
+  </footer>
+</body>
+</html>
