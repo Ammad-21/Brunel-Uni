@@ -65,67 +65,76 @@
 </section>
 
     <!-- TRACKER FORM -->
-    <section class="tracker">
-        <h3>Carbon Emission Tracker</h3>
-        <div class="form-group">
-            <label>Your Current Transport Method</label>
-            <select id="transport"> <!-- dropdown to pick transport type -->
-                <option value="car">Car (Petrol/Diesel)</option>
-                <option value="bus">Bus</option>
-                <option value="bike">Bicycle</option>
-                <option value="walk">Walking</option>
-            </select>
-        </div>
+<section class="tracker">
+    <h3>Carbon Emission Tracker</h3>
+    <div class="form-group">
+        <label>Your Current Transport Method</label>
+        <select id="transport"> <!-- dropdown to pick transport type -->
+            <option value="car">Car (Petrol/Diesel)</option>
+            <option value="bus">Bus</option>
+            <option value="bike">Bicycle</option>
+            <option value="walk">Walking</option>
+        </select>
+    </div>
 
-        <div class="form-group">
-            <label>Daily Distance (km)</label>
-            <input type="number" id="distance" placeholder="e.g., 14 km"> <!-- input for distance traveled -->
-        </div>
+    <div class="form-group">
+        <label>Daily Distance (km)</label>
+        <input type="number" id="distance" placeholder="e.g., 14 km"> <!-- input for distance traveled -->
+    </div>
 
-        <button type="button" id="calculateBtn" class="calculate-btn">Calculate</button> <!-- trigger calculation -->
+    <button type="button" id="calculateBtn" class="calculate-btn">Calculate</button> <!-- trigger calculation -->
 
-        <!-- RESULT BOX -->
-        <div class="results-box" id="resultsBox" style="display:none;"> <!-- initially hidden -->
-            <div class="results-title">Result</div>
-            <p id="adviceText"></p> <!-- calculated advice displayed here -->
-        </div>
-    </section>
+    <!-- RESULT BOX -->
+    <div class="results-box" id="resultsBox" style="display:none;"> <!-- initially hidden -->
+        <div class="results-title">Result</div>
+        <p id="adviceText"></p> <!-- calculated advice displayed here -->
+    </div>
+</section>
 
-    
-    <!-- Calculate button for results.-->
-    <script>
-    document.getElementById('calculateBtn').addEventListener('click', function() {
-        const transport = document.getElementById('transport').value;
-        const distance = parseFloat(document.getElementById('distance').value);
-        let advice = "";
+<script>
+document.getElementById('calculateBtn').addEventListener('click', function() {
+    const transport = document.getElementById('transport').value;
+    const distance = parseFloat(document.getElementById('distance').value);
+    let advice = "";
+    let co2PerKm = 0;
 
-        if (isNaN(distance) || distance <= 0) {
-            advice = "Please enter a valid distance."; // error handling
-        } else {
-            switch (transport) {
-                case "car":
-                    advice = distance > 25 
-                        ? "Your daily distance is long. Consider switching to Bus, Bicycle, or Walking for lower emissions!" 
-                        : "Car is fine for short distances, but consider cycling or bus to reduce your carbon footprint.";
-                    break;
-                case "bus":
-                    advice = "Bus is a good low-emission choice for your commute!";
-                    break;
-                case "bike":
-                    advice = "Cycling is excellent for both health and the environment!";
-                    break;
-                case "walk":
-                    advice = "Walking is the best zero-emission option!";
-                    break;
-            }
+    if (isNaN(distance) || distance <= 0) {
+        advice = "Please enter a valid distance."; // error handling
+    } else {
+        // define simple co2 emissions per km in kg
+        switch (transport) {
+            case "car":
+                co2PerKm = 0.192; // 192g per km ≈ 0.192 kg
+                advice = distance > 25 
+                    ? "Your daily distance is long. Consider switching to Bus, Bicycle, or Walking for lower emissions!" 
+                    : "Car is fine for short distances, but consider cycling or bus to reduce your carbon footprint.";
+                break;
+            case "bus":
+                co2PerKm = 0.105; // 105g per km ≈ 0.105 kg
+                advice = "Bus is a good low-emission choice for your commute!";
+                break;
+            case "bike":
+                co2PerKm = 0; // negligible emissions
+                advice = "Cycling is excellent for both health and the environment!";
+                break;
+            case "walk":
+                co2PerKm = 0; // negligible emissions
+                advice = "Walking is the best zero-emission option!";
+                break;
         }
 
-        const resultsBox = document.getElementById('resultsBox');
-        const adviceText = document.getElementById('adviceText');
-        adviceText.textContent = advice; // display advice
-        resultsBox.style.display = "block"; // show results
-    });
-    </script>
+        // calculate total co2 for the entered distance
+        const totalCo2 = (co2PerKm * distance).toFixed(2); // round to 2 decimals
+        advice = `You are emitting approximately ${totalCo2} kg of CO2 for this trip. ${advice}`;
+    }
+
+    // display results
+    const resultsBox = document.getElementById('resultsBox');
+    const adviceText = document.getElementById('adviceText');
+    adviceText.textContent = advice;
+    resultsBox.style.display = "block";
+});
+</script>
 
  <!-- POSTCODE SEARCH -->
 <section class="postcode-container">
@@ -222,14 +231,10 @@ document.getElementById("postcodeSearchBtn").addEventListener("click", () => {
 });
 </script>
 
-
-
-
 <!-- GOOGLE MAPS API -->
 <script async 
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDrR3CoPFw_9FxZ5P0O1BCxkUttMpL0CHE&libraries=places&callback=initMap">
 </script>
-
 
 <!-- FOOTER -->
 <footer>
@@ -244,7 +249,7 @@ document.getElementById("postcodeSearchBtn").addEventListener("click", () => {
             <a href="about.html">About Us & Tracker</a><br>
             <a href="dashboard.html">Dashboard</a><br>
             <a href="challenges.html">Challenges</a><br>
-            <a href="leaderboard.html">Leaderboard / Community</a>
+            <a href="leaderboard.html">Leaderboard </a>
         </div>
         <div>
             <h4>Contact</h4>
@@ -256,8 +261,6 @@ document.getElementById("postcodeSearchBtn").addEventListener("click", () => {
 
 </body>
 </html>
-
-
 
 <!--GLOBAL STYLES--> 
 
