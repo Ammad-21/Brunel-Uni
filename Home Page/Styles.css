@@ -542,6 +542,49 @@ a {
   margin: 0;
 }
 
+/* Savings bar for cost vs car */
+
+.calculator__summary {
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.calculator__summary strong {
+  color: #e5e7eb;
+}
+
+.savings-bar {
+  margin-top: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.savings-bar__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--text-soft);
+}
+
+.savings-bar__track {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  overflow: hidden;
+}
+
+.savings-bar__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent-strong), var(--accent));
+  transition: width 0.35s var(--transition-med);
+}
+
 /* SECTIONS */
 
 .section {
@@ -577,7 +620,8 @@ a {
   gap: 1.4rem;
 }
 
-.map-layout__map iframe {
+.map-layout__map iframe,
+.map-layout__map #ecoMap {
   width: 100%;
   min-height: 260px;
   border: none;

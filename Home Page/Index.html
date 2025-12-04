@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -180,7 +179,7 @@
 
               <div class="calculator__result" id="co2-result">
                 <p class="calculator__placeholder">
-                  Enter a trip to estimate your emissions.
+                  Enter a trip to estimate your emissions and cost.
                 </p>
               </div>
             </form>
@@ -201,13 +200,7 @@
 
       <div class="map-layout">
         <div class="map-layout__map">
-          <!-- Simple Google Maps embed placeholder -->
-          <iframe
-            title="EcoMove map"
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d19801.27701515033!2d-0.4800498!3d51.5321412!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48766ce9376cbdb7%3A0xaa891e0f7cec3b9!2sBrunel%20University%20London!5e0!3m2!1sen!2suk!4v1700000000000"
-            loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade"
-          ></iframe>
+          <div id="ecoMap"></div>
         </div>
 
         <aside class="map-layout__sidebar">
@@ -380,5 +373,12 @@
       <span class="footer__note">Prototype · No real user data stored yet</span>
     </div>
   </footer>
+
+  <!-- Google Maps JavaScript API: replace YOUR_API_KEY_HERE with your real key -->
+  <script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCJstLDKus2Mtce1WzLJ6EobJMFdoXHc-o&callback=initEcoMap"
+    async
+    defer
+  ></script>
 </body>
 </html>
