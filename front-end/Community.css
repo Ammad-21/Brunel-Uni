@@ -1,0 +1,65 @@
+
+/* ========================================
+   COMMUNITY SECTION STYLING
+   Eco-friendly green theme
+======================================== */
+
+.community-section {
+    background: #f2fff2; 
+    padding: 30px;
+    border-left: 5px solid #2a7a2a;
+    border-radius: 6px;
+    margin-top: 40px;
+}
+
+.community-section h2 {
+    color: #2a7a2a;
+    margin-bottom: 15px;
+}
+
+.community-box {
+    background: #ffffff;
+    border: 1px solid #cce6cc;
+    padding: 20px;
+    border-radius: 6px;
+    margin-bottom: 25px;
+}
+
+.community-box h3 {
+    color: #2a7a2a;
+    margin-bottom: 10px;
+}
+
+.leaderboard-list,
+.challenge-list {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.leaderboard-list li,
+.challenge-list li {
+    margin-bottom: 8px;
+    padding: 8px;
+    background: #e8f5e8;
+    border-radius: 4px;
+}
+
+.community-btn {
+    background-color: #2a7a2a;
+    color: white;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.community-btn:hover {
+    background-color: #256b25;
+}
+
+.goal-status {
+    margin-top: 10px;
+    font-weight: 500;
+    color: #2a7a2a;
+}
