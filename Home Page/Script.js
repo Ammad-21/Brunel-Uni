@@ -1,4 +1,4 @@
-// Smooth scroll for same-page anchors
+
 document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
   anchor.addEventListener("click", (e) => {
     const targetId = anchor.getAttribute("href");
@@ -12,7 +12,7 @@ document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
   });
 });
 
-// Navbar mobile toggle
+
 const navToggle = document.querySelector(".navbar__toggle");
 const mobileMenu = document.querySelector(".navbar__mobile");
 
@@ -22,7 +22,7 @@ if (navToggle && mobileMenu) {
     navToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
   });
 
-  // Close mobile menu on click of a link/button
+  
   mobileMenu.addEventListener("click", (e) => {
     if (e.target.matches("a, button")) {
       mobileMenu.classList.remove("navbar__mobile--open");
@@ -31,7 +31,7 @@ if (navToggle && mobileMenu) {
   });
 }
 
-// Auth buttons -> scroll to auth section + highlight card
+
 const authButtons = document.querySelectorAll("[data-open-auth]");
 const authSection = document.getElementById("auth");
 
@@ -55,7 +55,7 @@ authButtons.forEach((btn) => {
   });
 });
 
-// Fake prevent submit for login/signup (prototype only)
+
 ["login-form", "signup-form"].forEach((formId) => {
   const form = document.getElementById(formId);
   if (!form) return;
@@ -68,13 +68,13 @@ authButtons.forEach((btn) => {
   });
 });
 
-// Footer year
+
 const yearSpan = document.getElementById("footer-year");
 if (yearSpan) {
   yearSpan.textContent = new Date().getFullYear();
 }
 
-// CO₂ + cost calculator logic with savings bar
+
 const co2Form = document.getElementById("co2-form");
 const co2Result = document.getElementById("co2-result");
 
@@ -95,7 +95,7 @@ if (co2Form && co2Result) {
       return;
     }
 
-    // EMISSIONS (kg CO₂ per km) – demo factors
+ 
     const EMISSION_FACTORS = {
       car: 0.192,   // petrol car approx
       bus: 0.082,
