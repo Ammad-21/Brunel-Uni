@@ -26,17 +26,24 @@ public class TripController {
         return tripService.getTripById(id);
     }
 
-    @PostMapping
-    public Trip createTrip(@RequestBody Trip trip) {
-        // calculate CO2 based on transport type and distance
-        float co2PerKm = switch (trip.getTransportMode().toLowerCase()) {
-            case "car" -> 0.192f;
-            case "bus" -> 0.105f;
-            default -> 0f;
-        };
-        trip.setCo2Emission(co2PerKm * trip.getDistanceKm());
-        return tripService.addTrip(trip);
-    }
+   @PostMapping
+    public Trip createTrip(@RequestBody TripDTO tripDTO) {
+
+    Trip trip = new Trip();
+    trip.setUserId(tripDTO.getUserId());
+    trip.setTransportMode(tripDTO.getTransportMode());
+    trip.setDistanceKm(tripDTO.getDistanceKm());
+
+    float co2PerKm = switch (trip.getTransportMode().toLowerCase()) {
+        case "car" -> 0.192f;
+        case "bus" -> 0.105f;
+        default -> 0f;
+    };
+
+    trip.setCo2Emission(co2PerKm * trip.getDistanceKm());
+
+    return tripService.addTrip(trip);
+}
 
     @PutMapping("/{id}")
     public Trip updateTrip(@PathVariable Long id, @RequestBody Trip trip) {
