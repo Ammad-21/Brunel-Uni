@@ -18,7 +18,14 @@ public class HealthApiController {
     this.dataSource = dataSource;
   }
 
+  public record ApiHealth(boolean ok) {}
+
   public record DbHealth(boolean ok, String jdbcUrl, String databaseProduct) {}
+
+  @GetMapping("/ping")
+  public ApiHealth ping() {
+    return new ApiHealth(true);
+  }
 
   @GetMapping("/db")
   public DbHealth db() {
@@ -32,4 +39,3 @@ public class HealthApiController {
     }
   }
 }
-

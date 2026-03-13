@@ -47,14 +47,40 @@ const setText = (id, value) => {
   if (el) el.textContent = value;
 };
 
-const setApiStatus = ({ ok, detail } = {}) => {
-  const msg = ok ? "Connected" : "Not connected";
-  const color = ok ? "#34d399" : "#fca5a5";
+const shorten = (s, max = 60) => {
+  const str = String(s ?? "");
+  if (str.length <= max) return str;
+  return `${str.slice(0, max - 1)}…`;
+};
+
+const setApiStatus = ({ apiOk, dbOk, detail } = {}) => {
+  let msg = "Checking…";
+  let footerMsg = "API: Checking…";
+  let color = "#fbbf24";
+
+  if (apiOk === false) {
+    msg = "Not connected";
+    footerMsg = `API: Not connected${detail ? ` (${shorten(detail)})` : ""}`;
+    color = "#fca5a5";
+  } else if (apiOk === true && dbOk === false) {
+    msg = "API ok, DB down";
+    footerMsg = `API: Connected · DB: Down${detail ? ` (${shorten(detail)})` : ""}`;
+    color = "#fbbf24";
+  } else if (apiOk === true && dbOk === true) {
+    msg = "Connected";
+    footerMsg = "API: Connected · DB: Connected";
+    color = "#34d399";
+  } else if (apiOk === true) {
+    msg = "Connected";
+    footerMsg = "API: Connected";
+    color = "#34d399";
+  }
+
   const footer = document.getElementById("api-status");
   const auth = document.getElementById("api-status-auth");
 
   if (footer) {
-    footer.textContent = ok ? "API: Connected" : `API: Not connected${detail ? ` (${detail})` : ""}`;
+    footer.textContent = footerMsg;
     footer.style.color = color;
   }
 
@@ -95,8 +121,17 @@ const modeToTransportTypeNameLower = (mode) => {
 
 const refreshSummaryUI = async () => {
   try {
+    setApiStatus({ apiOk: undefined, dbOk: undefined });
+    await apiFetch("/api/health/ping");
+
+    try {
+      await apiFetch("/api/health/db");
+      setApiStatus({ apiOk: true, dbOk: true });
+    } catch (e) {
+      setApiStatus({ apiOk: true, dbOk: false, detail: e.message });
+    }
+
     const summary = await apiFetch("/api/stats/summary");
-    setApiStatus({ ok: true });
     setText("meta-trips", String(summary.totalTrips ?? 0));
     setText("meta-co2", formatKgOrTons(summary.totalCO2Saved ?? 0));
     setText("stat-active-users", String(summary.activeUsers ?? 0));
@@ -119,7 +154,7 @@ const refreshSummaryUI = async () => {
         `<div class="stat-card__row"><span>No data yet</span><span>—</span></div>`;
     }
   } catch (e) {
-    setApiStatus({ ok: false, detail: "start backend" });
+    setApiStatus({ apiOk: false, dbOk: false, detail: e.message || "start backend" });
     console.warn("EcoMove API summary unavailable:", e);
   }
 };
