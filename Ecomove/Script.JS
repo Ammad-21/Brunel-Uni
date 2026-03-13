@@ -47,6 +47,23 @@ const setText = (id, value) => {
   if (el) el.textContent = value;
 };
 
+const setApiStatus = ({ ok, detail } = {}) => {
+  const msg = ok ? "Connected" : "Not connected";
+  const color = ok ? "#34d399" : "#fca5a5";
+  const footer = document.getElementById("api-status");
+  const auth = document.getElementById("api-status-auth");
+
+  if (footer) {
+    footer.textContent = ok ? "API: Connected" : `API: Not connected${detail ? ` (${detail})` : ""}`;
+    footer.style.color = color;
+  }
+
+  if (auth) {
+    auth.textContent = msg;
+    auth.style.color = color;
+  }
+};
+
 let transportTypeIdByNameLower = null;
 
 const ensureTransportTypes = async () => {
@@ -79,6 +96,7 @@ const modeToTransportTypeNameLower = (mode) => {
 const refreshSummaryUI = async () => {
   try {
     const summary = await apiFetch("/api/stats/summary");
+    setApiStatus({ ok: true });
     setText("meta-trips", String(summary.totalTrips ?? 0));
     setText("meta-co2", formatKgOrTons(summary.totalCO2Saved ?? 0));
     setText("stat-active-users", String(summary.activeUsers ?? 0));
@@ -101,6 +119,7 @@ const refreshSummaryUI = async () => {
         `<div class="stat-card__row"><span>No data yet</span><span>—</span></div>`;
     }
   } catch (e) {
+    setApiStatus({ ok: false, detail: "start backend" });
     console.warn("EcoMove API summary unavailable:", e);
   }
 };
