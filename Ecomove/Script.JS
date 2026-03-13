@@ -1,4 +1,7 @@
-const API_BASE = localStorage.getItem("ECOMOVE_API_BASE") || "http://localhost:8080";
+const normalizeBaseUrl = (baseUrl) => String(baseUrl || "").replace(/\/+$/, "");
+const API_BASE = normalizeBaseUrl(
+  localStorage.getItem("ECOMOVE_API_BASE") || "http://localhost:8080"
+);
 const SESSION_KEY = "ecomove.session";
 
 const apiUrl = (path) => `${API_BASE}${path}`;
@@ -39,7 +42,14 @@ const apiFetch = async (path, { method = "GET", body } = {}) => {
   }
 
   const errText = await res.text().catch(() => "");
-  throw new Error(errText || `Request failed (${res.status})`);
+  let detail = errText;
+  try {
+    const parsed = JSON.parse(errText);
+    detail = parsed?.message || parsed?.error || parsed?.path || errText;
+  } catch {
+    // ignore
+  }
+  throw new Error(`${res.status}${detail ? `: ${detail}` : ""}`);
 };
 
 const setText = (id, value) => {
@@ -122,20 +132,23 @@ const modeToTransportTypeNameLower = (mode) => {
 const refreshSummaryUI = async () => {
   try {
     setApiStatus({ apiOk: undefined, dbOk: undefined });
-    await apiFetch("/api/health/ping");
+    const summary = await apiFetch("/api/stats/summary");
+    setApiStatus({ apiOk: true });
+    setText("meta-trips", String(summary.totalTrips ?? 0));
+    setText("meta-co2", formatKgOrTons(summary.totalCO2Saved ?? 0));
+    setText("stat-active-users", String(summary.activeUsers ?? 0));
+    setText("stat-low-carbon-trips", String(summary.lowCarbonTripsToday ?? 0));
 
     try {
       await apiFetch("/api/health/db");
       setApiStatus({ apiOk: true, dbOk: true });
     } catch (e) {
-      setApiStatus({ apiOk: true, dbOk: false, detail: e.message });
+      // If the backend is up but doesn't have this endpoint yet, don't treat as "down".
+      const is404 = String(e.message || "").startsWith("404");
+      if (!is404) {
+        setApiStatus({ apiOk: true, dbOk: false, detail: e.message });
+      }
     }
-
-    const summary = await apiFetch("/api/stats/summary");
-    setText("meta-trips", String(summary.totalTrips ?? 0));
-    setText("meta-co2", formatKgOrTons(summary.totalCO2Saved ?? 0));
-    setText("stat-active-users", String(summary.activeUsers ?? 0));
-    setText("stat-low-carbon-trips", String(summary.lowCarbonTripsToday ?? 0));
 
     const leaderboardEl = document.getElementById("leaderboard-snapshot");
     if (leaderboardEl) {
