@@ -30,10 +30,10 @@ public class Trip {
   @Column(nullable = false)
   private double distanceKm;
 
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "float8 default 0")
   private double co2Emitted;
 
-  @Column
+  @Column(nullable = false, columnDefinition = "float8 default 0")
   private double co2Saved;
 
   @Column(nullable = false)

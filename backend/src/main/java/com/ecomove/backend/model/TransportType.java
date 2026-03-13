@@ -18,7 +18,7 @@ public class TransportType {
   @Column(nullable = false, unique = true)
   private String name;
 
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "float8 default 0")
   private double co2PerKm;
 
   public TransportType() {}

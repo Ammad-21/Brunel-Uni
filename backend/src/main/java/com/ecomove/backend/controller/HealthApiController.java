@@ -22,8 +22,8 @@ public class HealthApiController {
 
   public record DbHealth(boolean ok, String jdbcUrl, String databaseProduct) {}
 
-  @GetMapping("/ping")
-  public ApiHealth ping() {
+  @GetMapping("/status")
+  public ApiHealth status() {
     return new ApiHealth(true);
   }
 
