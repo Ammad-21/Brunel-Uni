@@ -1,3 +1,110 @@
+const API_BASE = localStorage.getItem("ECOMOVE_API_BASE") || "http://localhost:8080";
+const SESSION_KEY = "ecomove.session";
+
+const apiUrl = (path) => `${API_BASE}${path}`;
+
+const formatKgOrTons = (kg) => {
+  const value = Number(kg ?? 0);
+  if (value >= 1000) return `${(value / 1000).toFixed(1)} t`;
+  return `${value.toFixed(1)} kg`;
+};
+
+const getSession = () => {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const setSession = (session) => {
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+};
+
+const clearSession = () => {
+  localStorage.removeItem(SESSION_KEY);
+};
+
+const apiFetch = async (path, { method = "GET", body } = {}) => {
+  const res = await fetch(apiUrl(path), {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (res.ok) {
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
+  }
+
+  const errText = await res.text().catch(() => "");
+  throw new Error(errText || `Request failed (${res.status})`);
+};
+
+const setText = (id, value) => {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+};
+
+let transportTypeIdByNameLower = null;
+
+const ensureTransportTypes = async () => {
+  if (transportTypeIdByNameLower) return transportTypeIdByNameLower;
+  const types = await apiFetch("/api/transport-types");
+  transportTypeIdByNameLower = new Map(
+    (types ?? []).map((t) => [String(t.name ?? "").toLowerCase(), t.id])
+  );
+  return transportTypeIdByNameLower;
+};
+
+const modeToTransportTypeNameLower = (mode) => {
+  switch (String(mode || "").toLowerCase()) {
+    case "car":
+      return "car";
+    case "bus":
+      return "bus";
+    case "train":
+      return "train";
+    case "cycling":
+    case "bike":
+      return "bike";
+    case "walking":
+      return "walking";
+    default:
+      return "car";
+  }
+};
+
+const refreshSummaryUI = async () => {
+  try {
+    const summary = await apiFetch("/api/stats/summary");
+    setText("meta-trips", String(summary.totalTrips ?? 0));
+    setText("meta-co2", formatKgOrTons(summary.totalCO2Saved ?? 0));
+    setText("stat-active-users", String(summary.activeUsers ?? 0));
+    setText("stat-low-carbon-trips", String(summary.lowCarbonTripsToday ?? 0));
+
+    const leaderboardEl = document.getElementById("leaderboard-snapshot");
+    if (leaderboardEl) {
+      const rows = (summary.leaderboardTop ?? [])
+        .map(
+          (row) => `
+          <div class="stat-card__row">
+            <span>${row.name ?? "Unknown"}</span>
+            <span>${Number(row.totalCO2Saved ?? 0).toFixed(1)} kg</span>
+          </div>
+        `
+        )
+        .join("");
+      leaderboardEl.innerHTML =
+        rows ||
+        `<div class="stat-card__row"><span>No data yet</span><span>—</span></div>`;
+    }
+  } catch (e) {
+    console.warn("EcoMove API summary unavailable:", e);
+  }
+};
+
 // Smooth scroll for same-page anchors
 document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
   anchor.addEventListener("click", (e) => {
@@ -55,18 +162,48 @@ authButtons.forEach((btn) => {
   });
 });
 
-// Fake prevent submit for login/signup (prototype only)
-["login-form", "signup-form"].forEach((formId) => {
-  const form = document.getElementById(formId);
-  if (!form) return;
-
-  form.addEventListener("submit", (e) => {
+const signupForm = document.getElementById("signup-form");
+if (signupForm) {
+  signupForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    alert(
-      "This is a front-end prototype. In the full EcoMove app, this form would send data to the backend."
-    );
+    const name = document.getElementById("signup-name")?.value?.trim();
+    const email = document.getElementById("signup-email")?.value?.trim();
+    const password = document.getElementById("signup-password")?.value;
+
+    try {
+      const user = await apiFetch("/api/users", {
+        method: "POST",
+        body: { name, email, password },
+      });
+      setSession({ userId: user.id, name: user.name, email: user.email });
+      await refreshSummaryUI();
+      alert("Account created. You’re now logged in.");
+    } catch (err) {
+      alert(`Sign up failed: ${err.message}`);
+    }
   });
-});
+}
+
+const loginForm = document.getElementById("login-form");
+if (loginForm) {
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("login-email")?.value?.trim();
+    const password = document.getElementById("login-password")?.value;
+
+    try {
+      const session = await apiFetch("/api/auth/login", {
+        method: "POST",
+        body: { email, password },
+      });
+      setSession({ userId: session.userId, name: session.name, email: session.email });
+      await refreshSummaryUI();
+      alert("Logged in.");
+    } catch (err) {
+      alert(`Login failed: ${err.message}`);
+    }
+  });
+}
 
 // Footer year
 const yearSpan = document.getElementById("footer-year");
@@ -196,6 +333,23 @@ if (co2Form && co2Result) {
       </div>
     `;
 
+    const session = getSession();
+    const canSave = Boolean(session?.userId);
+
+    const saveControls = canSave
+      ? `
+        <div style="margin-top:0.75rem;">
+          <button type="button" class="btn btn--ghost btn--full" id="save-trip-btn">
+            Save this trip to my account
+          </button>
+        </div>
+      `
+      : `
+        <p style="margin-top:0.75rem; color:#9ca3af;">
+          Log in or sign up to save trips to the database.
+        </p>
+      `;
+
     co2Result.innerHTML = `
       <div class="calculator__summary">
         ${emissionsLine}
@@ -203,7 +357,35 @@ if (co2Form && co2Result) {
         ${costLine}
       </div>
       ${savingsBar}
+      ${saveControls}
     `;
+
+    if (canSave) {
+      document.getElementById("save-trip-btn")?.addEventListener("click", async () => {
+        try {
+          const nameLower = modeToTransportTypeNameLower(mode);
+          const types = await ensureTransportTypes();
+          const transportTypeId = types.get(nameLower);
+          if (!transportTypeId) {
+            throw new Error(`Transport type not found on backend: ${nameLower}`);
+          }
+
+          await apiFetch("/api/trips", {
+            method: "POST",
+            body: {
+              userId: session.userId,
+              transportTypeId,
+              distanceKm: distance,
+            },
+          });
+
+          await refreshSummaryUI();
+          alert("Trip saved.");
+        } catch (err) {
+          alert(`Could not save trip: ${err.message}`);
+        }
+      });
+    }
   });
 }
 
@@ -283,3 +465,7 @@ function initEcoMap() {
     title: "Brunel University London",
   });
 }
+
+window.addEventListener("DOMContentLoaded", () => {
+  refreshSummaryUI().catch(() => {});
+});

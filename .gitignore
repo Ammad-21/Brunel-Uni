@@ -1,0 +1,15 @@
+.DS_Store
+.m2/
+
+# IDE
+.idea/
+.vscode/
+
+# Java / Maven
+**/target/
+*.class
+*.log
+
+# Node
+node_modules/
+
