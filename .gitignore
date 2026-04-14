@@ -13,3 +13,6 @@
 # Node
 node_modules/
 
+# H2 Database runtime files
+backend/data/
+
