@@ -4,7 +4,7 @@ This is my first commit.
 Hey, I'm Amad 👋
 
 **BSc Computer Science (AI & Machine Learning) @ Brunel University London**  
-Second year · Seeking 12-month placement year 2026/27 · London, UK 🇬🇧
+Second year  London, UK 🇬🇧
 
 ---
 
