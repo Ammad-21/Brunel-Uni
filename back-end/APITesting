@@ -1,0 +1,9 @@
+## API Testing
+
+All endpoints were tested using Thunder Client.
+
+GET /api/trips – retrieve all trips  
+POST /api/trips – create a new trip  
+PUT /api/trips/{id} – update an existing trip  
+DELETE /api/trips/{id} – remove a trip
+
