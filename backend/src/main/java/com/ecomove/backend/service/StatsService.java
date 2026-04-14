@@ -3,7 +3,6 @@ package com.ecomove.backend.service;
 import com.ecomove.backend.dto.LeaderboardDTO;
 import com.ecomove.backend.dto.SummaryStatsDTO;
 import com.ecomove.backend.repository.TripRepository;
-import com.ecomove.backend.repository.UserRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -12,18 +11,18 @@ import org.springframework.stereotype.Service;
 @Service
 public class StatsService {
   private final TripRepository tripRepository;
-  private final UserRepository userRepository;
+  private final UserSessionService userSessionService;
 
-  public StatsService(TripRepository tripRepository, UserRepository userRepository) {
+  public StatsService(TripRepository tripRepository, UserSessionService userSessionService) {
     this.tripRepository = tripRepository;
-    this.userRepository = userRepository;
+    this.userSessionService = userSessionService;
   }
 
   public SummaryStatsDTO getSummary() {
     long totalTrips = tripRepository.count();
     Double totalCo2SavedRaw = tripRepository.getTotalCo2Saved();
     double totalCO2Saved = totalCo2SavedRaw == null ? 0 : totalCo2SavedRaw;
-    long activeUsers = userRepository.count();
+    long activeUsers = userSessionService.countActiveUsers();
 
     LocalDate today = LocalDate.now();
     LocalDateTime from = today.atStartOfDay();

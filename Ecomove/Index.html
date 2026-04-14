@@ -34,9 +34,14 @@
         <a href="#dashboard" class="navbar__link">Dashboard</a>
       </nav>
 
-      <div class="navbar__auth">
+      <div class="navbar__auth" id="navbar-auth-buttons">
         <button class="btn btn--ghost" data-open-auth="login">Login</button>
         <button class="btn btn--primary" data-open-auth="signup">Sign up</button>
+      </div>
+
+      <div class="navbar__user" id="navbar-user" style="display:none;">
+        <a href="#my-dashboard" class="navbar__user-name" id="navbar-greeting">Hi there</a>
+        <button class="btn btn--ghost" id="navbar-logout-btn">Logout</button>
       </div>
 
       <button
@@ -55,8 +60,15 @@
       <a href="#community" class="navbar__mobile-link">Community</a>
       <a href="#challenges" class="navbar__mobile-link">Challenges</a>
       <a href="#dashboard" class="navbar__mobile-link">Dashboard</a>
-      <button class="btn btn--ghost" data-open-auth="login">Login</button>
-      <button class="btn btn--primary" data-open-auth="signup">Sign up</button>
+      <a href="#my-dashboard" class="navbar__mobile-link" id="mobile-dashboard-link" style="display:none;">My Dashboard</a>
+      <div id="mobile-auth-buttons">
+        <button class="btn btn--ghost" data-open-auth="login">Login</button>
+        <button class="btn btn--primary" data-open-auth="signup">Sign up</button>
+      </div>
+      <div id="mobile-user" style="display:none;">
+        <span id="mobile-greeting" style="color:#9ca3af; font-size:0.9rem;"></span>
+        <button class="btn btn--ghost" id="mobile-logout-btn">Logout</button>
+      </div>
     </div>
   </header>
 
@@ -126,13 +138,13 @@
                 <div class="speedometer__stat">
                   <span class="speedometer__stat-label">You</span>
                   <span class="speedometer__stat-value" id="speedometer-user">
-                    3.4 kg CO₂ saved
+                    Log in to see your savings
                   </span>
                 </div>
                 <div class="speedometer__stat">
                   <span class="speedometer__stat-label">Community</span>
                   <span class="speedometer__stat-value" id="speedometer-community">
-                    142.8 kg CO₂ saved
+                    Loading…
                   </span>
                 </div>
               </div>
@@ -146,6 +158,40 @@
             </header>
 
             <form id="co2-form" class="calculator">
+
+              <!-- Route planner -->
+              <div class="calculator__field">
+                <label for="route-origin">From</label>
+                <input
+                  type="text"
+                  id="route-origin"
+                  class="calculator__address"
+                  placeholder="Start address or place"
+                  autocomplete="off"
+                />
+              </div>
+
+              <div class="calculator__field">
+                <label for="route-destination">To</label>
+                <input
+                  type="text"
+                  id="route-destination"
+                  class="calculator__address"
+                  placeholder="End address or place"
+                  autocomplete="off"
+                />
+              </div>
+
+              <button type="button" class="btn btn--ghost btn--full" id="get-route-btn">
+                Get Route &amp; Distance
+              </button>
+
+              <div id="route-status" class="calculator__route-status" style="display:none;"></div>
+
+              <div class="calculator__divider">
+                <span>or enter distance manually</span>
+              </div>
+
               <div class="calculator__field">
                 <label for="distance">Distance</label>
                 <div class="calculator__input-group">
@@ -316,6 +362,7 @@
           <button type="submit" class="btn btn--primary btn--full">
             Login
           </button>
+          <div id="login-msg" class="form-msg" style="display:none;"></div>
 	          <p class="auth-card__hint">
 	            API status: <span id="api-status-auth">Checking…</span>
 	          </p>
@@ -358,11 +405,48 @@
           <button type="submit" class="btn btn--primary btn--full">
             Create account
           </button>
+          <div id="signup-msg" class="form-msg" style="display:none;"></div>
           <p class="auth-card__hint">
             In the full app, we’ll store your trips and sync stats across
             devices.
           </p>
         </form>
+      </div>
+    </section>
+    <!-- MY DASHBOARD (shown when logged in) -->
+    <section id="my-dashboard" class="section section--dashboard" style="display:none;">
+      <div class="section__header">
+        <h2 id="dashboard-heading">My Dashboard</h2>
+        <p>Your personal CO₂ impact at a glance.</p>
+      </div>
+
+      <!-- Personal stats -->
+      <div class="dashboard-stats">
+        <div class="stat-card">
+          <span class="stat-card__label">Total Trips</span>
+          <span class="stat-card__value" id="my-total-trips">—</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card__label">Distance Travelled</span>
+          <span class="stat-card__value" id="my-total-distance">—</span>
+          <span class="stat-card__hint">km</span>
+        </div>
+        <div class="stat-card stat-card--accent">
+          <span class="stat-card__label">CO₂ Saved</span>
+          <span class="stat-card__value" id="my-co2-saved">—</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card__label">CO₂ Emitted</span>
+          <span class="stat-card__value" id="my-co2-emitted">—</span>
+        </div>
+      </div>
+
+      <!-- Trip history -->
+      <div class="trip-history">
+        <h3 class="trip-history__title">Trip History</h3>
+        <div id="trip-history-body">
+          <p style="color:#9ca3af;">No trips yet. Use the calculator above to log your first trip.</p>
+        </div>
       </div>
     </section>
   </main>
@@ -376,7 +460,7 @@
 
   
   <script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCJstLDKus2Mtce1WzLJ6EobJMFdoXHc-o&callback=initEcoMap"
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDJKI-9opqwyOiCnW7l3i1eiGUxhF7ABy0&libraries=places&callback=initEcoMap"
     async
     defer
   ></script>

@@ -5,6 +5,7 @@ import com.ecomove.backend.model.User;
 import com.ecomove.backend.service.TripService;
 import com.ecomove.backend.service.UserService;
 import java.util.List;
+import org.springframework.lang.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,7 +38,7 @@ public class UserController {
   }
 
   @GetMapping("/{id}/stats")
-  public UserStatsDTO getUserStats(@PathVariable("id") Long userId) {
+  public UserStatsDTO getUserStats(@PathVariable("id") @NonNull Long userId) {
     return tripService.getUserStats(userId);
   }
 }

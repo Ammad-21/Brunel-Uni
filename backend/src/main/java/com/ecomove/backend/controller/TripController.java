@@ -4,8 +4,10 @@ import com.ecomove.backend.model.Trip;
 import com.ecomove.backend.service.TripService;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.lang.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,7 +23,12 @@ public class TripController {
     this.tripService = tripService;
   }
 
-  public record CreateTripRequest(Long userId, Long transportTypeId, double distanceKm) {}
+  public record CreateTripRequest(
+      @NonNull Long userId,
+      @NonNull Long transportTypeId,
+      double distanceKm,
+      LocalDateTime startTime,
+      LocalDateTime endTime) {}
 
   public record TripResponse(
       Long id,
@@ -31,18 +38,27 @@ public class TripController {
       double distanceKm,
       double co2Emitted,
       double co2Saved,
-      LocalDateTime tripDate) {}
+      LocalDateTime tripDate,
+      LocalDateTime startTime,
+      LocalDateTime endTime) {}
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public TripResponse createTrip(@RequestBody CreateTripRequest request) {
-    Trip trip = tripService.createTrip(request.userId(), request.transportTypeId(), request.distanceKm());
+    Trip trip = tripService.createTrip(
+        request.userId(), request.transportTypeId(), request.distanceKm(),
+        request.startTime(), request.endTime());
     return toResponse(trip);
   }
 
   @GetMapping
   public List<TripResponse> getAllTrips() {
     return tripService.getAllTrips().stream().map(this::toResponse).toList();
+  }
+
+  @GetMapping("/user/{userId}")
+  public List<TripResponse> getTripsByUser(@PathVariable Long userId) {
+    return tripService.getTripsByUser(userId).stream().map(this::toResponse).toList();
   }
 
   private TripResponse toResponse(Trip trip) {
@@ -54,6 +70,8 @@ public class TripController {
         trip.getDistanceKm(),
         trip.getCo2Emitted(),
         trip.getCo2Saved(),
-        trip.getTripDate());
+        trip.getTripDate(),
+        trip.getStartTime(),
+        trip.getEndTime());
   }
 }

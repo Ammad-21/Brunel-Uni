@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -23,7 +24,12 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
 
   @Override
   @EntityGraph(attributePaths = {"user", "transportType"})
+  @NonNull
   List<Trip> findAll();
+
+  @EntityGraph(attributePaths = {"user", "transportType"})
+  @Query("select t from Trip t where t.user.id = :userId order by t.tripDate desc")
+  List<Trip> findByUserId(Long userId);
 
   @Query("""
       select

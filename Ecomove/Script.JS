@@ -29,6 +29,40 @@ const clearSession = () => {
   localStorage.removeItem(SESSION_KEY);
 };
 
+// --- Session interval tracking ---
+
+const sendHeartbeat = () => {
+  const session = getSession();
+  if (!session?.sessionId) return;
+  apiFetch(`/api/sessions/${session.sessionId}/heartbeat`, { method: "POST" }).catch(() => {});
+};
+
+const sendLogout = () => {
+  const session = getSession();
+  if (!session?.sessionId) return;
+  // Use sendBeacon so it fires even when tab is closing
+  navigator.sendBeacon(
+    apiUrl(`/api/sessions/${session.sessionId}/logout`)
+  );
+};
+
+// Heartbeat every 2 minutes while page is open
+let heartbeatInterval = null;
+const startHeartbeat = () => {
+  stopHeartbeat();
+  sendHeartbeat(); // immediate first ping
+  heartbeatInterval = setInterval(sendHeartbeat, 2 * 60 * 1000);
+};
+const stopHeartbeat = () => {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+};
+
+// Fire logout when tab/browser closes
+window.addEventListener("beforeunload", sendLogout);
+
 const apiFetch = async (path, { method = "GET", body } = {}) => {
   const res = await fetch(apiUrl(path), {
     method,
@@ -55,6 +89,16 @@ const apiFetch = async (path, { method = "GET", body } = {}) => {
 const setText = (id, value) => {
   const el = document.getElementById(id);
   if (el) el.textContent = value;
+};
+
+const showFormMsg = (id, message, isError) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = message;
+  el.className = `form-msg form-msg--${isError ? "error" : "success"}`;
+  el.style.display = "block";
+  // Auto-hide success messages after 4 seconds
+  if (!isError) setTimeout(() => { el.style.display = "none"; }, 4000);
 };
 
 const shorten = (s, max = 60) => {
@@ -238,15 +282,24 @@ if (signupForm) {
     const password = document.getElementById("signup-password")?.value;
 
     try {
-      const user = await apiFetch("/api/users", {
+      await apiFetch("/api/users", {
         method: "POST",
         body: { name, email, password },
       });
-      setSession({ userId: user.id, name: user.name, email: user.email });
+      // Auto-login after signup to get a sessionId
+      const session = await apiFetch("/api/auth/login", {
+        method: "POST",
+        body: { email, password },
+      });
+      setSession({ userId: session.userId, name: session.name, email: session.email, sessionId: session.sessionId });
+      startHeartbeat();
+      updateNavbarAuth();
       await refreshSummaryUI();
-      alert("Account created. You’re now logged in.");
+      await loadUserDashboard();
+      updateSpeedometer();
+      showFormMsg("signup-msg", "Account created. You’re now logged in!", false);
     } catch (err) {
-      alert(`Sign up failed: ${err.message}`);
+      showFormMsg("signup-msg", `Sign up failed: ${err.message}`, true);
     }
   });
 }
@@ -263,11 +316,15 @@ if (loginForm) {
         method: "POST",
         body: { email, password },
       });
-      setSession({ userId: session.userId, name: session.name, email: session.email });
+      setSession({ userId: session.userId, name: session.name, email: session.email, sessionId: session.sessionId });
+      startHeartbeat();
+      updateNavbarAuth();
       await refreshSummaryUI();
-      alert("Logged in.");
+      await loadUserDashboard();
+      updateSpeedometer();
+      showFormMsg("login-msg", `Welcome back, ${session.name}!`, false);
     } catch (err) {
-      alert(`Login failed: ${err.message}`);
+      showFormMsg("login-msg", `Login failed: ${err.message}`, true);
     }
   });
 }
@@ -291,6 +348,7 @@ if (co2Form && co2Result) {
     if (!distanceInput || !modeSelect) return;
 
     const distance = parseFloat(distanceInput.value);
+    const tripStartTime = new Date().toISOString().slice(0, 19); // capture when user calculated
     const mode = modeSelect.value;
 
     if (!distance || distance <= 0 || !mode) {
@@ -409,6 +467,7 @@ if (co2Form && co2Result) {
           <button type="button" class="btn btn--ghost btn--full" id="save-trip-btn">
             Save this trip to my account
           </button>
+          <div id="trip-save-msg" class="form-msg" style="display:none;"></div>
         </div>
       `
       : `
@@ -443,13 +502,17 @@ if (co2Form && co2Result) {
               userId: session.userId,
               transportTypeId,
               distanceKm: distance,
+              startTime: tripStartTime,
+              endTime: new Date().toISOString().slice(0, 19),
             },
           });
 
           await refreshSummaryUI();
-          alert("Trip saved.");
+          await loadUserDashboard();
+          updateSpeedometer();
+          showFormMsg("trip-save-msg", "Trip saved to your account!", false);
         } catch (err) {
-          alert(`Could not save trip: ${err.message}`);
+          showFormMsg("trip-save-msg", `Could not save trip: ${err.message}`, true);
         }
       });
     }
@@ -460,25 +523,64 @@ if (co2Form && co2Result) {
 const speedometerEl = document.querySelector(".speedometer__dial");
 const speedometerValueEl = document.getElementById("speedometer-value");
 
-if (speedometerEl && speedometerValueEl) {
-  const targetPercent = 72; // demo
+const DAILY_GOAL_KG = 1.5; // 1.5 kg CO₂ saved = 100%
+
+const animateSpeedometer = (targetPercent) => {
+  if (!speedometerEl || !speedometerValueEl) return;
+  const capped = Math.min(targetPercent, 100);
   let current = 0;
 
   const step = () => {
     current += 3;
-    if (current > targetPercent) current = targetPercent;
+    if (current > capped) current = capped;
 
     const degrees = Math.round((current / 100) * 280); // 280° sweep
     speedometerEl.style.setProperty("--speedometer-progress", String(degrees));
     speedometerValueEl.textContent = `${current}%`;
 
-    if (current < targetPercent) {
+    if (current < capped) {
       requestAnimationFrame(step);
     }
   };
 
   requestAnimationFrame(step);
-}
+};
+
+const updateSpeedometer = async () => {
+  const session = getSession();
+  const communityEl = document.getElementById("speedometer-community");
+  const userEl = document.getElementById("speedometer-user");
+
+  try {
+    // Always update community total from summary
+    const summary = await apiFetch("/api/stats/summary");
+    if (communityEl) {
+      communityEl.textContent = `${formatKgOrTons(summary.totalCO2Saved)} CO₂ saved`;
+    }
+  } catch {
+    // ignore if summary fails
+  }
+
+  if (!session?.userId) {
+    animateSpeedometer(0);
+    if (userEl) userEl.textContent = "Log in to see your savings";
+    return;
+  }
+
+  try {
+    const stats = await apiFetch(`/api/users/${session.userId}/stats`);
+    const saved = stats.totalCO2Saved ?? 0;
+    const percent = Math.round((saved / DAILY_GOAL_KG) * 100);
+
+    if (userEl) userEl.textContent = `${formatKgOrTons(saved)} CO₂ saved`;
+    animateSpeedometer(percent);
+  } catch {
+    animateSpeedometer(0);
+  }
+};
+
+// Run on page load
+updateSpeedometer();
 
 // Google Maps initialisation for EcoMap
 function initEcoMap() {
@@ -531,8 +633,212 @@ function initEcoMap() {
     map,
     title: "Brunel University London",
   });
+
+  // --- Directions service + renderer ---
+  const directionsService = new google.maps.DirectionsService();
+  const directionsRenderer = new google.maps.DirectionsRenderer({
+    map,
+    suppressMarkers: false,
+    polylineOptions: { strokeColor: "#4ade80", strokeWeight: 5, strokeOpacity: 0.85 },
+  });
+
+  // --- Places Autocomplete on the two address inputs ---
+  const originInput = document.getElementById("route-origin");
+  const destinationInput = document.getElementById("route-destination");
+
+  if (originInput && destinationInput) {
+    new google.maps.places.Autocomplete(originInput, { types: ["geocode"] });
+    new google.maps.places.Autocomplete(destinationInput, { types: ["geocode"] });
+  }
+
+  // --- Get Route button ---
+  const getRouteBtn = document.getElementById("get-route-btn");
+  const routeStatus = document.getElementById("route-status");
+  const distanceInput = document.getElementById("distance");
+
+  if (getRouteBtn) {
+    getRouteBtn.addEventListener("click", () => {
+      const origin = originInput?.value?.trim();
+      const destination = destinationInput?.value?.trim();
+
+      if (!origin || !destination) {
+        showRouteStatus("Please enter both a start and end location.", true);
+        return;
+      }
+
+      getRouteBtn.textContent = "Getting route…";
+      getRouteBtn.disabled = true;
+
+      directionsService.route(
+        {
+          origin,
+          destination,
+          travelMode: google.maps.TravelMode.DRIVING,
+        },
+        (result, status) => {
+          getRouteBtn.textContent = "Get Route & Distance";
+          getRouteBtn.disabled = false;
+
+          if (status === "OK") {
+            directionsRenderer.setDirections(result);
+
+            // Extract distance in km from first leg
+            const leg = result.routes[0].legs[0];
+            const distanceKm = (leg.distance.value / 1000).toFixed(1);
+
+            if (distanceInput) {
+              distanceInput.value = distanceKm;
+            }
+
+            showRouteStatus(
+              `Route found: ${leg.distance.text} · ${leg.duration.text} · Distance set to ${distanceKm} km`,
+              false
+            );
+          } else {
+            showRouteStatus("Could not find a route. Try different locations.", true);
+          }
+        }
+      );
+    });
+  }
+
+  const showRouteStatus = (message, isError) => {
+    if (!routeStatus) return;
+    routeStatus.textContent = message;
+    routeStatus.style.display = "block";
+    routeStatus.classList.toggle("error", isError);
+  };
 }
+
+// --- Auth state: show/hide navbar buttons vs user greeting ---
+
+const updateNavbarAuth = () => {
+  const session = getSession();
+  const loggedIn = Boolean(session?.userId);
+
+  const authButtons = document.getElementById("navbar-auth-buttons");
+  const userBlock = document.getElementById("navbar-user");
+  const greeting = document.getElementById("navbar-greeting");
+  const mobileAuth = document.getElementById("mobile-auth-buttons");
+  const mobileUser = document.getElementById("mobile-user");
+  const mobileGreeting = document.getElementById("mobile-greeting");
+  const mobileDashLink = document.getElementById("mobile-dashboard-link");
+  const dashboardSection = document.getElementById("my-dashboard");
+
+  if (loggedIn) {
+    const name = session.name?.split(" ")[0] || "there";
+    if (authButtons) authButtons.style.display = "none";
+    if (userBlock) userBlock.style.display = "flex";
+    if (greeting) greeting.textContent = `Hi, ${name}`;
+    if (mobileAuth) mobileAuth.style.display = "none";
+    if (mobileUser) mobileUser.style.display = "block";
+    if (mobileGreeting) mobileGreeting.textContent = `Logged in as ${session.name}`;
+    if (mobileDashLink) mobileDashLink.style.display = "block";
+    if (dashboardSection) dashboardSection.style.display = "block";
+  } else {
+    if (authButtons) authButtons.style.display = "flex";
+    if (userBlock) userBlock.style.display = "none";
+    if (mobileAuth) mobileAuth.style.display = "block";
+    if (mobileUser) mobileUser.style.display = "none";
+    if (mobileDashLink) mobileDashLink.style.display = "none";
+    if (dashboardSection) dashboardSection.style.display = "none";
+  }
+};
+
+// --- Logout handler ---
+
+const handleLogout = () => {
+  sendLogout();
+  stopHeartbeat();
+  clearSession();
+  updateNavbarAuth();
+  const tripHistoryBody = document.getElementById("trip-history-body");
+  if (tripHistoryBody) {
+    tripHistoryBody.innerHTML = '<p style="color:#9ca3af;">No trips yet.</p>';
+  }
+};
+
+document.getElementById("navbar-logout-btn")?.addEventListener("click", handleLogout);
+document.getElementById("mobile-logout-btn")?.addEventListener("click", handleLogout);
+
+// --- Per-user dashboard ---
+
+const formatDate = (isoString) => {
+  if (!isoString) return "—";
+  const d = new Date(isoString);
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+};
+
+const formatTime = (isoString) => {
+  if (!isoString) return "—";
+  const d = new Date(isoString);
+  return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+};
+
+const loadUserDashboard = async () => {
+  const session = getSession();
+  if (!session?.userId) return;
+
+  const heading = document.getElementById("dashboard-heading");
+  if (heading) heading.textContent = `${session.name}'s Dashboard`;
+
+  try {
+    const [stats, trips] = await Promise.all([
+      apiFetch(`/api/users/${session.userId}/stats`),
+      apiFetch(`/api/trips/user/${session.userId}`),
+    ]);
+
+    setText("my-total-trips", stats.totalTrips ?? 0);
+    setText("my-total-distance", Number(stats.totalDistanceKm ?? 0).toFixed(1));
+    setText("my-co2-saved", formatKgOrTons(stats.totalCO2Saved ?? 0));
+    setText("my-co2-emitted", formatKgOrTons(stats.totalCO2Emitted ?? 0));
+
+    const tbody = document.getElementById("trip-history-body");
+    if (!tbody) return;
+
+    if (!trips || trips.length === 0) {
+      tbody.innerHTML = '<p style="padding:1.5rem; color:#9ca3af;">No trips yet. Use the calculator above to log your first trip.</p>';
+      return;
+    }
+
+    tbody.innerHTML = `
+      <table class="trip-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Mode</th>
+            <th>Distance</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>CO₂ Saved</th>
+            <th>CO₂ Emitted</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${trips.map((t) => `
+            <tr>
+              <td>${formatDate(t.tripDate)}</td>
+              <td><span class="trip-badge">${t.transportTypeName}</span></td>
+              <td>${Number(t.distanceKm).toFixed(1)} km</td>
+              <td>${formatTime(t.startTime)}</td>
+              <td>${formatTime(t.endTime)}</td>
+              <td class="trip-co2-saved">${formatKgOrTons(t.co2Saved)}</td>
+              <td class="trip-co2-emitted">${formatKgOrTons(t.co2Emitted)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+  } catch (e) {
+    console.warn("Could not load dashboard:", e);
+  }
+};
 
 window.addEventListener("DOMContentLoaded", () => {
   refreshSummaryUI().catch(() => {});
+  updateNavbarAuth();
+  if (getSession()?.sessionId) {
+    startHeartbeat();
+    loadUserDashboard().catch(() => {});
+  }
 });

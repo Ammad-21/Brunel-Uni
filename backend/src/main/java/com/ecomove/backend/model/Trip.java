@@ -39,6 +39,12 @@ public class Trip {
   @Column(nullable = false)
   private LocalDateTime tripDate;
 
+  @Column
+  private LocalDateTime startTime;
+
+  @Column
+  private LocalDateTime endTime;
+
   public Trip() {}
 
   public Trip(
@@ -112,5 +118,21 @@ public class Trip {
 
   public void setTripDate(LocalDateTime tripDate) {
     this.tripDate = tripDate;
+  }
+
+  public LocalDateTime getStartTime() {
+    return startTime;
+  }
+
+  public void setStartTime(LocalDateTime startTime) {
+    this.startTime = startTime;
+  }
+
+  public LocalDateTime getEndTime() {
+    return endTime;
+  }
+
+  public void setEndTime(LocalDateTime endTime) {
+    this.endTime = endTime;
   }
 }

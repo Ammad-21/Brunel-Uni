@@ -10,6 +10,7 @@ import com.ecomove.backend.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -28,7 +29,8 @@ public class TripService {
     this.transportTypeRepository = transportTypeRepository;
   }
 
-  public Trip createTrip(Long userId, Long transportTypeId, double distanceKm) {
+  public Trip createTrip(@NonNull Long userId, @NonNull Long transportTypeId, double distanceKm,
+      LocalDateTime startTime, LocalDateTime endTime) {
     if (distanceKm <= 0) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "distanceKm must be > 0");
     }
@@ -62,7 +64,9 @@ public class TripService {
     trip.setDistanceKm(distanceKm);
     trip.setCo2Emitted(co2Emitted);
     trip.setCo2Saved(co2Saved);
-    trip.setTripDate(LocalDateTime.now());
+    trip.setTripDate(startTime != null ? startTime : LocalDateTime.now());
+    trip.setStartTime(startTime);
+    trip.setEndTime(endTime);
 
     return tripRepository.save(trip);
   }
@@ -71,7 +75,14 @@ public class TripService {
     return tripRepository.findAll();
   }
 
-  public UserStatsDTO getUserStats(Long userId) {
+  public List<Trip> getTripsByUser(Long userId) {
+    userRepository
+        .findById(userId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    return tripRepository.findByUserId(userId);
+  }
+
+  public UserStatsDTO getUserStats(@NonNull Long userId) {
     userRepository
         .findById(userId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
